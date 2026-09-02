@@ -129,3 +129,4 @@ write_xlsx(
   poblacion,
   "../Base_Datos_Depurada/poblacion_LATAM.xlsx"
 )
+
