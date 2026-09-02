@@ -1,0 +1,172 @@
+---
+title: "Informe técnico: Análisis demográfico de Latinoamérica"
+author: "Carlos Darío Rubí Turrent"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+# 1. Introducción
+
+Este informe presenta los principales resultados del análisis demográfico de países seleccionados de Latinoamérica. Se analizan la evolución de la población, la fertilidad y la mortalidad durante el periodo disponible en las bases de datos.
+
+El objetivo es identificar tendencias, diferencias y patrones demográficos entre los países estudiados mediante técnicas de Ciencia de Datos y visualización.
+
+## Objetivos
+
+1. Describir la evolución de la población de los países seleccionados.
+2. Analizar la evolución de las tasas de fertilidad y mortalidad.
+3. Comparar los patrones demográficos entre países.
+4. Explorar la relación entre fertilidad, mortalidad y crecimiento poblacional.
+5. Comunicar los principales resultados mediante visualizaciones claras.
+
+# 2. Preparación de los datos
+```{r setup, message=FALSE, warning=FALSE}
+library(readxl)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(knitr)
+
+mortalidad <- read_excel("../Base_Datos_Depurada/mortalidad_LATAM.xlsx")
+fertilidad <- read_excel("../Base_Datos_Depurada/fertilidad_LATAM.xlsx")
+poblacion <- read_excel("../Base_Datos_Depurada/poblacion_LATAM.xlsx")
+```
+
+## 3. Tabla resumen de indicadores
+
+A continuación se presenta una tabla resumen con algunos indicadores demográficos de los países analizados. Para facilitar la comparación, se muestran los valores correspondientes al último año disponible en las bases de datos.
+
+```{r tabla-resumen, message=FALSE, warning=FALSE}
+poblacion_resumen <- poblacion %>%
+  select(name, matches("2025")) %>%
+  pivot_longer(
+    cols = -name,
+    names_to = "Año",
+    values_to = "Población"
+  )
+
+kable(
+  poblacion_resumen,
+  caption = "Población de los países seleccionados en 2025"
+)
+```
+
+## 4. Evolución de la población
+
+Para analizar la evolución de la población, se seleccionan los datos correspondientes al periodo 1950-2025. Posteriormente, los datos se transforman a formato largo para facilitar su representación gráfica.
+
+```{r grafico-poblacion, message=FALSE, warning=FALSE}
+
+poblacion_grafico <- poblacion %>%
+  select(name, `1950`, `1951`, `1952`, `1953`, `1954`, `1955`,
+         `1956`, `1957`, `1958`, `1959`, `1960`, `1961`, `1962`,
+         `1963`, `1964`, `1965`, `1966`, `1967`, `1968`, `1969`,
+         `1970`, `1971`, `1972`, `1973`, `1974`, `1975`, `1976`,
+         `1977`, `1978`, `1979`, `1980`, `1981`, `1982`, `1983`,
+         `1984`, `1985`, `1986`, `1987`, `1988`, `1989`, `1990`,
+         `1991`, `1992`, `1993`, `1994`, `1995`, `1996`, `1997`,
+         `1998`, `1999`, `2000`, `2001`, `2002`, `2003`, `2004`,
+         `2005`, `2006`, `2007`, `2008`, `2009`, `2010`, `2011`,
+         `2012`, `2013`, `2014`, `2015`, `2016`, `2017`, `2018`,
+         `2019`, `2020`, `2021`, `2022`, `2023`, `2024`, `2025`) %>%
+  pivot_longer(
+    cols = -name,
+    names_to = "Año",
+    values_to = "Población"
+  ) %>%
+  mutate(Año = as.numeric(Año))
+
+ggplot(
+  poblacion_grafico,
+  aes(
+    x = Año,
+    y = Población,
+    group = name,
+    color = name
+  )
+) +
+  geom_line(linewidth = 1) +
+  labs(
+    title = "Evolución de la población en los países seleccionados",
+    subtitle = "Periodo 1950-2025",
+    x = "Año",
+    y = "Población",
+    color = "País"
+  ) +
+  theme_minimal()
+
+```
+## 5. Evolución de la fertilidad y la mortalidad
+
+Además de la evolución de la población, el análisis de las tasas de fertilidad y mortalidad permite identificar cambios importantes en los patrones demográficos de los países seleccionados. Para facilitar la comparación, se calculan los valores promedio de ambos indicadores para los años 1950 y 2025.
+
+```{r indicadores-demograficos, message=FALSE, warning=FALSE}
+
+fertilidad_promedio <- fertilidad %>%
+  summarise(
+    Fertilidad_1950 = mean(`1950`, na.rm = TRUE),
+    Fertilidad_2025 = mean(`2025`, na.rm = TRUE)
+  )
+
+mortalidad_promedio <- mortalidad %>%
+  summarise(
+    Mortalidad_1950 = mean(`1950`, na.rm = TRUE),
+    Mortalidad_2025 = mean(`2025`, na.rm = TRUE)
+  )
+
+tabla_indicadores <- data.frame(
+  Indicador = c("Fertilidad", "Mortalidad infantil"),
+  `1950` = c(
+    fertilidad_promedio$Fertilidad_1950,
+    mortalidad_promedio$Mortalidad_1950
+  ),
+  `2025` = c(
+    fertilidad_promedio$Fertilidad_2025,
+    mortalidad_promedio$Mortalidad_2025
+  )
+)
+
+knitr::kable(
+  tabla_indicadores,
+  digits = 2,
+  caption = "Evolución promedio de los indicadores demográficos, 1950-2025"
+)
+
+```
+
+Los resultados permiten comparar el comportamiento promedio de la fertilidad y la mortalidad infantil entre el inicio y el final del periodo analizado. Esta comparación contribuye a identificar cambios generales en las condiciones demográficas de los países seleccionados.
+
+
+## 6. Comparación entre países
+
+A continuación se comparan los países seleccionados a partir de tres indicadores demográficos: población, fertilidad y mortalidad infantil. Esta comparación permite identificar diferencias en los patrones demográficos observados en 2025.
+
+```{r comparacion-paises, message=FALSE, warning=FALSE}
+
+comparacion_paises <- data.frame(
+  Pais = poblacion$name,
+  Poblacion_2025 = poblacion$`2025`,
+  Fertilidad_2025 = fertilidad$`2025`,
+  Mortalidad_2025 = mortalidad$`2025`
+)
+
+knitr::kable(
+  comparacion_paises,
+  digits = 2,
+  caption = "Comparación de indicadores demográficos por país, 2025"
+)
+```
+
+## 7. Principales hallazgos
+
+Los resultados obtenidos permiten identificar cambios importantes en los indicadores demográficos de los países seleccionados durante el periodo 1950-2025.
+
+La fertilidad promedio disminuyó de **6.03 hijos por mujer en 1950** a **1.90 hijos por mujer en 2025**. Esta reducción refleja un cambio significativo en los patrones reproductivos de los países analizados.
+
+De manera similar, la mortalidad infantil promedio disminuyó de **174.01 muertes por cada 1,000 nacidos en 1950** a **14.73 muertes por cada 1,000 nacidos en 2025**. La reducción observada representa una mejora importante en las condiciones de supervivencia infantil.
+
+La comparación entre países en 2025 también muestra diferencias relevantes. Chile presenta la fertilidad más baja entre los países seleccionados, con **1.13 hijos por mujer**, mientras que Haití registra la mortalidad infantil más alta, con **53.79 muertes por cada 1,000 nacidos**.
+
+En términos de población, Brasil presenta el mayor valor entre los países analizados, con **212,812,405 habitantes**, seguido de México, con **131,946,900 habitantes**.
+
+En conjunto, los resultados muestran una transformación demográfica caracterizada por una reducción general de la fertilidad y de la mortalidad infantil, aunque persisten diferencias importantes entre los países analizados.
